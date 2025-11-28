@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { router } from '@inertiajs/react';
 
 export default function CreateOrderModal({ onClose }) {
     const [description, setDescription] = useState('');
@@ -9,16 +10,18 @@ export default function CreateOrderModal({ onClose }) {
     const [quantity, setQuantity] = useState(1);
     const [price, setPrice] = useState(0);
 
-    // Calcular subtotal de todos los productos
+    // Calcular subtotal total
     const subtotal = products.reduce((acc, p) => acc + p.quantity * p.price, 0);
-    const total = subtotal; // Podrías agregar impuestos si quieres
+    const total = subtotal;
 
     const addProduct = () => {
         if (!productName || quantity <= 0 || price <= 0) return;
+
         setProducts([
             ...products,
             { id: Date.now(), productName, quantity, price, subtotal: quantity * price },
         ]);
+
         setProductName('');
         setQuantity(1);
         setPrice(0);
@@ -28,8 +31,9 @@ export default function CreateOrderModal({ onClose }) {
         setProducts(products.filter(p => p.id !== id));
     };
 
-    const submitOrder = async (e) => {
+    const submitOrder = (e) => {
         e.preventDefault();
+
         if (!description || !origin || !destination || products.length === 0) {
             alert("Completa todos los campos y agrega al menos un producto.");
             return;
@@ -50,24 +54,16 @@ export default function CreateOrderModal({ onClose }) {
             })),
         };
 
-        try {
-            const res = await fetch('/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) throw new Error('Error al crear la orden');
-
-            alert('Orden creada correctamente');
-            onClose();
-        } catch (err) {
-            console.error(err);
-            alert('Hubo un error al crear la orden');
-        }
+        router.post('/orders', payload, {
+            onSuccess: () => {
+                alert('Orden creada correctamente');
+                onClose();
+            },
+            onError: (errors) => {
+                console.log(errors);
+                alert('Ocurrió un error al crear la orden');
+            }
+        });
     };
 
     return (
@@ -111,6 +107,7 @@ export default function CreateOrderModal({ onClose }) {
                     {/* Agregar productos */}
                     <div className="mb-4 border-t pt-4">
                         <h3 className="font-semibold mb-2">Agregar productos</h3>
+
                         <div className="flex gap-2 mb-2">
                             <input
                                 type="text"
@@ -133,7 +130,11 @@ export default function CreateOrderModal({ onClose }) {
                                 onChange={e => setPrice(parseFloat(e.target.value))}
                                 className="w-32 border p-2 rounded"
                             />
-                            <button type="button" onClick={addProduct} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                            <button
+                                type="button"
+                                onClick={addProduct}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                            >
                                 ➕
                             </button>
                         </div>
@@ -157,7 +158,11 @@ export default function CreateOrderModal({ onClose }) {
                                         <td className="p-2 border">Bs {p.price}</td>
                                         <td className="p-2 border">Bs {p.subtotal}</td>
                                         <td className="p-2 border">
-                                            <button type="button" onClick={() => removeProduct(p.id)} className="text-red-600">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeProduct(p.id)}
+                                                className="text-red-600"
+                                            >
                                                 ✖
                                             </button>
                                         </td>
@@ -172,10 +177,17 @@ export default function CreateOrderModal({ onClose }) {
 
                     {/* Botones */}
                     <div className="flex justify-end gap-2">
-                        <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                        >
                             Cancelar
                         </button>
-                        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                        <button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                        >
                             Guardar orden
                         </button>
                     </div>
