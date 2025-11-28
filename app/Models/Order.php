@@ -1,0 +1,32 @@
+<?php
+
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Order extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'tracking_code',
+        'customer_name',
+        'customer_phone',
+        'subtotal',
+        'total',
+        'status',
+    ];
+
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function updates()
+    {
+        return $this->hasMany(TrackingUpdate::class)
+                    ->latest();
+    }
+}
