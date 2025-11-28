@@ -1,10 +1,16 @@
-// resources/js/Pages/Tracking/Form.jsx
 import React, { useState } from 'react';
 
 export default function TrackingForm() {
     const [trackingCode, setTrackingCode] = useState('');
     const [order, setOrder] = useState(null);
     const [error, setError] = useState('');
+    const [showModal, setShowModal] = useState(false);
+
+    // Campos del modal
+    const [personName, setPersonName] = useState('');
+    const [notes, setNotes] = useState('');
+    const [location, setLocation] = useState('');
+    const [arrivedOk, setArrivedOk] = useState(1);
 
     const searchOrder = async (e) => {
         e.preventDefault();
@@ -32,6 +38,48 @@ export default function TrackingForm() {
         } catch (err) {
             console.error(err);
             setError('Error al buscar la orden');
+        }
+    };
+
+    const addUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch('/tracking/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    tracking_code: trackingCode,
+                    person_name: personName,
+                    notes,
+                    location,
+                    arrived_ok: arrivedOk
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                alert(data.message || 'Error al agregar actualización');
+                return;
+            }
+
+            const data = await res.json();
+            // actualizar el estado de la orden con la nueva actualización
+            setOrder(prev => ({
+                ...prev,
+                updates: [...prev.updates, data.update]
+            }));
+            // cerrar modal y limpiar campos
+            setShowModal(false);
+            setPersonName('');
+            setNotes('');
+            setLocation('');
+            setArrivedOk(1);
+        } catch (err) {
+            console.error(err);
+            alert('Error al agregar actualización');
         }
     };
 
@@ -71,7 +119,15 @@ export default function TrackingForm() {
                         ))}
                     </ul>
 
-                    <h3 className="font-semibold mt-4">Actualizaciones</h3>
+                    <h3 className="font-semibold mt-4 flex justify-between items-center">
+                        Actualizaciones
+                        <button 
+                            className="bg-green-600 text-white px-2 py-1 rounded text-sm"
+                            onClick={() => setShowModal(true)}
+                        >
+                            + Nueva
+                        </button>
+                    </h3>
                     <ul>
                         {order.updates.map(update => (
                             <li key={update.id}>
@@ -79,6 +135,50 @@ export default function TrackingForm() {
                             </li>
                         ))}
                     </ul>
+                </div>
+            )}
+
+            {/* Modal */}
+            {showModal && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                    <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+                        <h2 className="text-lg font-bold mb-4">Agregar actualización</h2>
+                        <form onSubmit={addUpdate} className="flex flex-col gap-2">
+                            <input
+                                type="text"
+                                placeholder="Nombre"
+                                value={personName}
+                                onChange={e => setPersonName(e.target.value)}
+                                className="border p-2 rounded"
+                                required
+                            />
+                            <input
+                                type="text"
+                                placeholder="Ubicación"
+                                value={location}
+                                onChange={e => setLocation(e.target.value)}
+                                className="border p-2 rounded"
+                            />
+                            <textarea
+                                placeholder="Notas"
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                                className="border p-2 rounded"
+                            />
+                            <select
+                                value={arrivedOk}
+                                onChange={e => setArrivedOk(Number(e.target.value))}
+                                className="border p-2 rounded"
+                            >
+                                <option value={1}>Llegó correctamente</option>
+                                <option value={0}>Problema en entrega</option>
+                            </select>
+                            <div className="flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => setShowModal(false)} className="px-3 py-1 rounded border">Cancelar</button>
+                                <button type="submit" className="px-3 py-1 rounded bg-blue-600 text-white">Agregar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

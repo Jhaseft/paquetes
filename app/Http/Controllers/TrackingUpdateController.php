@@ -12,29 +12,25 @@ class TrackingUpdateController extends Controller
     {
         $request->validate([
             'tracking_code' => 'required',
-            'name_from_form' => 'required',
-            'comment' => 'nullable',
-            'status_update' => 'required|in:received,in_route,delivered,damaged',
-            'location_lat' => 'nullable|numeric',
-            'location_lng' => 'nullable|numeric',
+            'person_name' => 'required|string',
+            'notes' => 'nullable|string',
+            'location' => 'nullable|string',
+            'arrived_ok' => 'required|integer|in:0,1',
         ]);
 
         $order = Order::where('tracking_code', $request->tracking_code)->firstOrFail();
 
-        TrackingUpdate::create([
+        $update = TrackingUpdate::create([
             'order_id' => $order->id,
-            'name_from_form' => $request->name_from_form,
-            'comment' => $request->comment,
-            'status_update' => $request->status_update,
-            'location_lat' => $request->location_lat,
-            'location_lng' => $request->location_lng,
+            'person_name' => $request->person_name,
+            'notes' => $request->notes,
+            'location' => $request->location,
+            'arrived_ok' => $request->arrived_ok,
         ]);
 
-        // Actualizar estado principal del paquete
-        $order->update([
-            'status' => $request->status_update,
+        return response()->json([
+            'message' => 'Actualización registrada',
+            'update' => $update
         ]);
-
-        return back()->with('success', 'Actualización registrada.');
     }
 }
