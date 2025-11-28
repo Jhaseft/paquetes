@@ -19,54 +19,52 @@ class OrderController extends Controller
         ]);
     }
 
-    // FORMULARIO PARA CREAR
-    public function create()
-    {
-        return Inertia::render('Orders/Create');
-    }
 
     // GUARDAR ORDEN
-    public function store(Request $request)
-    {
-        $request->validate([
-            'customer_name' => 'required',
-            'customer_phone' => 'nullable',
-            'products' => 'required|array|min=1',
-        ]);
+public function store(Request $request)
+{
+    // Validación según nuevos campos
+    $request->validate([
+        'description' => 'required',
+        'origin_address' => 'required',
+        'destination_address' => 'required',
+        'products' => 'required|array|min:1',
+    ]);
 
-        // GENERAR CÓDIGO ÚNICO
-        $tracking = strtoupper(substr(md5(time()), 0, 8));
+    // Generar código único
+    $tracking = strtoupper(substr(md5(time()), 0, 8));
 
-        $subtotal = 0;
-
-        foreach ($request->products as $p) {
-            $subtotal += $p['price'] * $p['quantity'];
-        }
-
-        $total = $subtotal;
-
-        $order = Order::create([
-            'tracking_code' => $tracking,
-            'customer_name' => $request->customer_name,
-            'customer_phone' => $request->customer_phone,
-            'subtotal' => $subtotal,
-            'total' => $total,
-            'status' => 'pending',
-        ]);
-
-        // INSERTAR ITEMS
-        foreach ($request->products as $p) {
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_name' => $p['product_name'],
-                'quantity' => $p['quantity'],
-                'price' => $p['price'],
-                'subtotal' => $p['price'] * $p['quantity'],
-            ]);
-        }
-
-        return redirect()->route('orders.show', $order->id);
+    // Calcular subtotal y total
+    $subtotal = 0;
+    foreach ($request->products as $p) {
+        $subtotal += $p['price'] * $p['quantity'];
     }
+    $total = $subtotal;
+
+    // Crear orden
+    $order = Order::create([
+        'tracking_code' => $tracking,
+        'description' => $request->description,
+        'origin_address' => $request->origin_address,
+        'destination_address' => $request->destination_address,
+        'subtotal' => $subtotal,
+        'total' => $total,
+        'status' => 'pending',
+    ]);
+
+    // Insertar items
+    foreach ($request->products as $p) {
+        OrderItem::create([
+            'order_id' => $order->id,
+            'item_name' => $p['product_name'], // coincidiendo con el frontend
+            'unit_price' => $p['price'],       // coincidiendo con el modelo OrderItem
+            'quantity' => $p['quantity'],
+            'total_line' => $p['subtotal'],    // coincidiendo con el modelo OrderItem
+        ]);
+    }
+
+    return redirect()->route('home', $order->id);
+}
 
     // VER DETALLE
     public function show(Order $order)

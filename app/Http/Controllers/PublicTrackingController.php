@@ -1,33 +1,36 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\Order;
 use Illuminate\Http\Request;
+use App\Models\Order;
 use Inertia\Inertia;
 
 class PublicTrackingController extends Controller
 {
+    // Mostrar formulario
     public function form()
     {
-        return Inertia::render('Tracking/Search');
+       return Inertia::render('Form'); // O retorna el HTML de tu SPA si es necesario
     }
 
+    // Buscar orden por código
     public function search(Request $request)
     {
         $request->validate([
-            'tracking_code' => 'required',
+            'tracking_code' => 'required|string',
         ]);
 
-        $order = Order::where('tracking_code', $request->tracking_code)
-                      ->with('items', 'updates')
-                      ->first();
+        $order = Order::with(['items', 'updates'])
+            ->where('tracking_code', $request->tracking_code)
+            ->first();
 
         if (!$order) {
-            return back()->withErrors(['tracking_code' => 'No existe este código']);
+            return response()->json([
+                'message' => 'Código de seguimiento no encontrado.'
+            ], 404);
         }
 
-        return Inertia::render('Tracking/Show', [
+        return response()->json([
             'order' => $order
         ]);
     }

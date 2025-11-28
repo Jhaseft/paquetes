@@ -12,8 +12,9 @@ class Order extends Model
 
     protected $fillable = [
         'tracking_code',
-        'customer_name',
-        'customer_phone',
+        'description',
+        'origin_address',
+        'destination_address',
         'subtotal',
         'total',
         'status',

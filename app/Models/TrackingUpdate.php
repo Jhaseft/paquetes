@@ -11,11 +11,10 @@ class TrackingUpdate extends Model
 
     protected $fillable = [
         'order_id',
-        'name_from_form',
-        'location_lat',
-        'location_lng',
-        'comment',
-        'status_update',
+        'person_name',
+        'location',
+        'arrived_ok',
+        'notes',
     ];
 
     public function order()
